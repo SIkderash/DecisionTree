@@ -17,7 +17,7 @@ def str_column_to_float(dataset):
 
 
 def cross_validation_split(dataset, n_folds):
-	dataset_split = list()
+	dataset_split = []
 	dataset_copy = dataset
 	fold_size = len(dataset) // n_folds
 	for i in range(n_folds):
@@ -48,8 +48,8 @@ def evaluate_algorithm(dataset, algorithm, n_folds, *args):
 		actual = []
 		for row in fold:
 			row_copy = list(row)
-			test_set.append(row_copy)
 			row_copy[-1] = None
+			test_set.append(row_copy)
 			actual.append(row[-1])
 		predicted = algorithm(train_set, test_set, *args)
 		accuracy = accuracy_metric(actual, predicted)
@@ -68,11 +68,11 @@ def split_by_attribute_value(index, value, dataset):
 
 
 def get_number_of_instances(groups):
-	n_instances = []
+	instances = []
 	for group in groups:
-		n_instances.append(len(group))
+		instances.append(len(group))
 
-	n_instances = sum(n_instances)
+	n_instances = sum(instances)
 	n_instances = float(n_instances)
 	return n_instances
 
@@ -85,8 +85,11 @@ def gini_index(groups, classes):
 		if size == 0:
 			continue
 		score = 0.0
+		all_labels = []
+		for row in group:
+			all_labels.append(row[-1])
 		for class_val in classes:
-			p = [row[-1] for row in group].count(class_val) / size
+			p = all_labels.count(class_val) / size
 			score += p * p
 		gini += (1.0 - score) * (size / total_instances)
 	return gini
@@ -154,18 +157,18 @@ def build_tree(train, max_depth, min_size):
 	return root
 
 
-def is_leaf(node):
+def is_internal(node):
 	return isinstance(node, dict)
 
 
 def predict(node, row):
 	if row[node['index']] < node['value']:
-		if is_leaf(node['left']):
+		if is_internal(node['left']):
 			return predict(node['left'], row)
 		else:
 			return node['left']
 	else:
-		if is_leaf(node['right']):
+		if is_internal(node['right']):
 			return predict(node['right'], row)
 		else:
 			return node['right']
@@ -183,15 +186,15 @@ def decision_tree(train, test, max_depth, min_size):
 
 
 def printTree(node, space):
-	spacing = "    "
-	spacing = space * spacing
-	if is_leaf(node):
-		print(spacing, node)
-		return
+	print(space * "    " , end = " ")
+	if is_internal(node):
+		print("Attribute ",node['index'], "<", node['value'])
+		printTree(node['left'], space+1)
+		printTree(node['right'], space+1)
 	else:
-		print(spacing, node['index'], " ", node['value'])
-		printTree("-> ", node['left'], space+1)
-		printTree("-> ", node['right'], space+1)
+		print(node)
+		return
+
 
 seed(1)
 n_folds = 10
